@@ -5,6 +5,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+
 int update_metadata(server_ftp_t * server_ftp, char * file) 
 {
 	FILE * F_IN;
@@ -61,9 +66,53 @@ int update_metadata(server_ftp_t * server_ftp, char * file)
 	return 0;
 }
 
-void open_download(server_ftp_t * server_ftp)
+int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 {
-	// attendre accept
-	// quand accept, on créer une nouvelle conexion dans un fork
-	// Upload dans le fork 
+	int pid = fork();
+	// -1
+	if(pid == 0)
+	{
+		packet_ftp_t P;
+		int nbytes;
+
+		do {
+			nbytes = read(pipe, &P, sizeof(packet_ftp_t));
+			if (nbytes > 0) {
+			    printf("SERVER_FTP :\n");
+			    printf("hostname %s\n", P.hostname);
+			    printf("data %s\n", P.buf);
+			    if(data[0] == 'D')
+			    {
+				    server_ftp->upload(server_ftp, nom_fichier, P.hostname, "6666");
+			    }
+			    if(data[0] == 'E')
+			    {
+				server_fpt->write_data(server_ftp, nom_fichier, description_fichier);
+				server_ftp->publish_data(server_ftp, nom_fichier, description_fichier);
+			    }
+			}
+		} while (nbytes > 0);
+
+		printf("Finished reading\n");
+	}
+	return 0;
+}
+
+int upload(server_ftp, char * nom_fichier, char * hostname, char * port)
+{
+	// fonction qui lit un fichier et l'envoie
+	// fonction qui envoie End + nom fichier
+	return 0;
+}
+
+int write_data(server_ftp server, char * nom_fichier, char * description_fichier)
+{
+	// append nom fichier et description fichier dans le fichier metadata
+	return 0;
+}	
+
+int publish_data(server_ftp server, char * nom_fichier, char * description_fichier)
+{
+	// envoie au server central la nouvelle donnée
+	return 0;
 }

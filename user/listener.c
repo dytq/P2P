@@ -14,8 +14,7 @@
 #include "listener.h"
 
 #define MAX_CLIENT 5
-
-int listener(char * addr, char * port, int pipfd)
+int listener(char * addr, char * port, int pipefd)
 {
 	struct addrinfo hints;
 	struct addrinfo * results;
@@ -55,56 +54,48 @@ int listener(char * addr, char * port, int pipfd)
 	}
 	
 	freeaddrinfo(results);
-
-	listen(sockfd, MAX_CLIENT);
+	printf("%d\n", sockfd);	
+	// listen(sockfd, MAX_CLIENT);
 	
-	while(1)
-	{	
-		int clientfd = accept(sockfd, NULL, NULL);
-		printf("clientfd: %d\n",clientfd);
-		
-		if(clientfd < 0)
-		{
-			fprintf(stdout, "erreur accept");
-		}
-		// attente du message...
-		int pid = fork();
+	/*
+	int clientfd = accept(sockfd, NULL, NULL);
+	printf("clientfd: %d\n",clientfd);
+	if(clientfd < 0)
+	{
+		fprintf(stderr, "erreur accept clienfd\n");
+	}
+	int pid = fork();
 
-		if(pid == -1)
+	if(pid == -1)
+	{
+		fprintf(stdout, "erreur fork\n");
+		exit(EXIT_FAILURE);
+	}
+	if(pid == 0) // processus du fils
+	{
+		printf("création du processus fils\n");
+		while(1)
 		{
-			fprintf(stdout, "erreur fork");
-			exit(0);
-		}
-		if(pid == 0) // processus du fils
-		{
-			printf("création du processus fils\n");	
-			while(1)
+			char buf[1024];
+			ssize_t n = recv(clientfd, buf, 1024, 0);
+			if(n == 0)
 			{
-				char buf[1024];
-				ssize_t n = recv(clientfd, buf, 1024, 0);
-				if(n == 0)
-				{
-					printf("fin de la recepetion\n");
-					break;
-				}
-				printf("message: %s",buf);
-				char buffer[1024] = "lst ";
-				strcat(buffer, buf);
-				write(pipfd, buffer, 1024);
+				printf("fin de la reception\n");
+				break;
 			}
-			printf("fin du processus fils\n");
-			exit(0);
+			printf("message: %s",buf);
+			write(pipefd, buf, 1024);
 		}
-		if(pid > 0) // processus recut du père
-		{
-
-			close(clientfd);
-			//wait(NULL); // mise en attente jusqu'à la fin du processus fils	
-			//printf("fin du processus fils %d", pid);
-		}
-
-	}	
-
-	return 0;
+		close(clientfd);
+		close(pipefd);
+		printf("Fermeture du fils\n");
+		exit(0);
+	}
+	if(pid > 0) // processus recut du père
+	{
+		printf("pid fils %d\n", pid);
+	}
+	*/
+	return sockfd;
 }
 

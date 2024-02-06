@@ -124,87 +124,153 @@ int main(int argc, char * argv[])
 	listen(sockfd, 5);
     	struct sockaddr_in client_address;
 	socklen_t client_address_len = sizeof(client_address);
-while (1) {
-        int client_socket = accept(sockfd, (struct sockaddr *)&client_address, &client_address_len);
-        if (client_socket == -1) {
-            perror("Erreur lors de l'acceptation de la connexion");
-            // close(server_socket);
-            exit(EXIT_FAILURE);
-        }
-
-        // Adresse IP du client
-        char client_ip[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
-        printf("Connexion établie avec %s:%d\n", client_ip, ntohs(client_address.sin_port));
-
-        // Gérer la communication avec le client
-        // (vous pouvez implémenter ici la logique de votre application P2P)
-
-        // Fermer la connexion avec le client
-        close(client_socket);
-    }
-
-	/*
-	while(1)
+	int pid = fork();
+	if(pid == 0)
 	{
-		printf("Attente de clients...\n");
-		struct sockaddr * sockaddr_ptr;
-		// struct socklen_t * socklen_ptr;
-		int clientfd = accept(sockfd, sockaddr_ptr, NULL);
-	
+		while (1) {
+			int client_socket = accept(sockfd, (struct sockaddr *)&client_address, &client_address_len);
+			if (client_socket == -1) {
+			    perror("Erreur lors de l'acceptation de la connexion");
+			    // close(server_socket);
+			    exit(EXIT_FAILURE);
+			}
 
+			// Adresse IP du client
+			char client_ip[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
+			printf("Connexion établie avec %s:%d\n", client_ip, ntohs(client_address.sin_port));
 
-		struct addrinfo hints, *info, *p;
-		int gai_result;
-
-		char hostname[1024];
-		hostname[1023] = '\0';
-		gethostname(hostname, 1023);
-
-		memset(&hints, 0, sizeof hints);
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_CANONNAME;
-
-		if ((gai_result = getaddrinfo(hostname, "http", &hints, &info)) != 0) {
-		    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(gai_result));
-		    exit(1);
-		}
-
-		for(p = info; p != NULL; p = p->ai_next) {
-		    printf("hostname: %s\n", p->ai_canonname);
-		}
-
-		freeaddrinfo(info);
-
-		if(clientfd < 0)
-		{
-			fprintf(stderr, "erreur accept clienfd\n");
-		}
-		printf("création d'un nouveau client %d\n", clientfd);
+			// Gérer la communication avec le client
+			// (vous pouvez implémenter ici la logique de votre application P2P)
+			// attente du message...
+						int pid_client = fork();
+			if(pid_client == 0)
+			{
+				// attente du message...
+				while(1)
+				{
+					char buf[1024];
+					ssize_t n = recv(client_socket, buf, 1024, 0);
+					if(n == 0)
+					{
+						break;
+					}
+					printf("message: %s",buf);
+				}
+				// Fermer la connexion avec le client
+				close(client_socket);
+				exit(0);
+			}
+			wait(NULL);
+			
+			// Fermer la connexion avec le client
+			close(client_socket);
+		    }
+		exit(1);
 	}
-	*/
 	/*
 	int p[2];
 	pipe(p);
+	*/
 	
-	int f = fork();	
-	// f == -1 
-	if(f == 0)
+	printf("Initialisation du serveur_ftp...\n");
+	
+	// Initialisation du serveur_ftp
+	server_ftp_t * server_ftp;	
+	server_ftp = malloc(sizeof(server_ftp_t));
+	if(server_ftp == NULL)
 	{
-				exit(0);
+		fprintf(stderr, "Erreur d'allocation de mémoire pour le serveur ftp");
+		exit(EXIT_FAILURE);
+	}	
+	server_ftp->update_metadata = update_metadata;	
+	
+	server_ftp->hostname_main_server = argv[1];
+	server_ftp->port_main_server = argv[2];
+	
+	printf("Update metadata...\n");
+       	server_ftp->update_metadata(server_ftp, "metadata.txt");
+	
+	// création du client_ftp
+	client_ftp_t * client_ftp;
+	client_ftp = malloc(sizeof(client_ftp_t));
+	if(client_ftp == NULL)
+	{
+		fprintf(stderr, "Erreur d'allocaltion de mémoire pour le client ftp");
+		exit(EXIT_FAILURE);
 	}
-	printf("Lecture des données...\n");
-	while(1)
+
+	client_ftp->search_key = search_key;
+
+	client_ftp->hostname_main_server = argv[1];
+	client_ftp->port_main_server = argv[2];
+	
+	// recherche des mots clées
+	printf("Entrer mot clé:\n");
+	char key[32];
+	char * key_ptr = key;
+	read_stdin(key_ptr, 32);
+	client_ftp->search_key(client_ftp, key);
+
+	/*
+	// Init server_ftp
+	server_ftp_t * server_ftp;
+        server_ftp = malloc(sizeof(server_ftp_t));
+	// si null
+	// server_ftp->sockfd = -1;
+
+	// Init client_ftp	
+	client_ftp_t * client_ftp;
+	client_ftp = malloc(sizeof(client_ftp_t));
+	// si null
+	
+	int p[2]; // pipe 2 files descriptor for cmd		
+	pipe(p);
+	
+	int pid_cmd = fork();
+	if(pid_cmd == -1)
+	{
+		fprintf(stderr, "erreur de la création du fork command");
+		exit(EXIT_FAILURE);
+	}
+	if(pid_cmd == 0)
+	{
+		printf("$> Listening in cmd\n");
+		
+		command(p[1]);
+		
+		close(p[1]);
+		exit(0);
+	}
+	if(pid_cmd > 0)
+	{
+		// void	
+	}
+	
+	//int p_lst[2]; // pipe 2 files descriptor for listener
+	// pipe(p_lst);
+	
+	int pid_lst = fork();
+	
+	if(pid_lst == -1)
+	{
+		fprintf(stdout, "erreur fork\n");
+		return -1;
+	}
+	if(pid_lst == 0)
+	{
+		printf("$> Listening in : %s:%s\n", argv[1],argv[2]); 
+		listener(argv[1], argv[2], p[1]);	
+		exit(0);
+	}
+	if(pid_lst > 0)
 	{
 		char buf[1024];
 		while(read(p[0],buf,1024)>0)
 		{ 
-			printf("pipe read %s\n", buf);
-			break;
+			exec_cmd(buf, server_ftp, client_ftp);
 		}
 	}
-	printf("Fin de lecture");
-	*/
+	*/	
 	return 0;
 }

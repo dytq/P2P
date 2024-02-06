@@ -1,7 +1,7 @@
 run_server_central:
-	./p2p 192.168.0.43 6666 localhost 6666
+	./p2p 192.168.0.25 6666 localhost 6666
 run_client:
-	./p2p localhost 6666 192.168.0.43 6666
+	./p2p localhost 6666 192.168.0.25 6666
 	
 compile: main.o listener.o talker.o parser.o server_ftp.o client_ftp.o
 	gcc -g -o p2p main.o listener.o talker.o parser.o server_ftp.o client_ftp.o

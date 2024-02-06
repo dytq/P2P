@@ -9,9 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/socket.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include <sys/types.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 /*
 int get_buff_array(char * buf[10], char * cmd)
 {
@@ -114,28 +118,74 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Liaison du port hostname de reception %s:%s\n", argv[1],argv[2]);
+	printf("Liaison du port hostname de reception %s:%s\n", argv[1],argv[2]);	
+	printf("Démmarage du serveur centrale...\n");
 	
-	/*
-	int p[2];
-	pipe(p);
-	*/
-	
-	int pid = fork();
-	if(pid == -1)
-	{
-		fprintf(stderr, "Erreur création fils pour le listener");
-		exit(EXIT_FAILURE);
-	}
-	if(pid == 0)
-	{
-		listener(argv[3], argv[4], 0);
-		exit(0);
-	}
+	int p_server[2];
+	pipe(p_server);
+	int p_client[2];
+	pipe(p_client);
 
+	int sockfd = -1; // sockfd du listener
+	sockfd = listener(argv[1], argv[2], 0);
+	listen(sockfd, 5);
+	struct sockaddr_in client_address;
+	socklen_t client_address_len = sizeof(client_address);
+
+	int pid = fork();
+	packet_ftp_t P;
+
+	if (pid == 0) {
+		while (1) 
+		{
+			int client_socket = accept(sockfd, (struct sockaddr *)&client_address, &client_address_len);
+			if (client_socket == -1) 
+			{
+				perror("Erreur lors de l'acceptation de la connexion");
+				exit(EXIT_FAILURE);
+			}
+			char client_ip[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
+			printf("Connexion établie avec %s:%d\n", client_ip, ntohs(client_address.sin_port));
+
+			// Gérer la communication avec le client
+			int pid_client = fork();
+			if (pid_client == 0) 
+			{
+				while (1) 
+				{
+					ssize_t n = recv(client_socket, P.buf, sizeof(P.buf), 0);
+					if (n <= 0) 
+					{
+						break;
+					}
+
+					strncpy(P.hostname, client_ip, INET_ADDRSTRLEN * sizeof(char)); // Copie du hostname
+					printf("client ip  %s\n", client_ip);
+					write(p_server[1], &P, sizeof(packet_ftp_t));
+					write(p_client[1], &P, sizeof(packet_ftp_t));
+				}
+				// Fermer la connexion avec le client
+				close(client_socket);
+				exit(0);
+			}
+			// Fermer la connexion avec le client
+			close(client_socket);
+		}
+		exit(1);
+	}
 
 	printf("Initialisation du serveur_ftp...\n");
-	
+	/*	
+	char inbuf[1024];  	
+	int nbytes;
+	while ((nbytes = read(p_server[0], inbuf, 1024)) > 0) 
+            printf("% s\n", inbuf); 
+        if (nbytes != 0) 
+            exit(2); 
+        printf("Finished reading\n"); 	
+	*/
+
 	// Initialisation du serveur_ftp
 	server_ftp_t * server_ftp;	
 	server_ftp = malloc(sizeof(server_ftp_t));
@@ -144,14 +194,18 @@ int main(int argc, char * argv[])
 		fprintf(stderr, "Erreur d'allocation de mémoire pour le serveur ftp");
 		exit(EXIT_FAILURE);
 	}	
-	server_ftp->update_metadata = update_metadata;	
 	
+	server_ftp->update_metadata = update_metadata;	
+	server_ftp->listen_server_ftp = listen_server_ftp;
+
 	server_ftp->hostname_main_server = argv[1];
 	server_ftp->port_main_server = argv[2];
 	
+	server_ftp->listen_server_ftp(server_ftp, p_server[0]);
+
 	printf("Update metadata...\n");
        	server_ftp->update_metadata(server_ftp, "metadata.txt");
-	
+		
 	// création du client_ftp
 	client_ftp_t * client_ftp;
 	client_ftp = malloc(sizeof(client_ftp_t));
@@ -162,17 +216,23 @@ int main(int argc, char * argv[])
 	}
 
 	client_ftp->search_key = search_key;
+	client_ftp->listen_client_ftp = listen_client_ftp;
 
-	client_ftp->hostname_main_server = argv[1];
-	client_ftp->port_main_server = argv[2];
-	
+	client_ftp->hostname_main_server = argv[3];
+	client_ftp->port_main_server = argv[4];
+
+	printf("Écoute du client ftp...\n");
+	client_ftp->listen_client_ftp(client_ftp, p_client[0]);
+
 	// recherche des mots clées
-	printf("Entrer mot clé:\n");
-	char key[32];
-	char * key_ptr = key;
-	read_stdin(key_ptr, 32);
-	client_ftp->search_key(client_ftp, key);
-
+	while(1)
+	{
+		printf("cmd P2P > : \n");
+		char key[32];
+		char * key_ptr = key;
+		read_stdin(key_ptr, 32);
+		client_ftp->search_key(client_ftp, key);
+	}
 	/*
 	// Init server_ftp
 	server_ftp_t * server_ftp;
@@ -232,6 +292,6 @@ int main(int argc, char * argv[])
 			exec_cmd(buf, server_ftp, client_ftp);
 		}
 	}
-	*/
+	*/	
 	return 0;
 }

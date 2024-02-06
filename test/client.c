@@ -55,10 +55,11 @@ int main(int argc, char * argv[])
     	size_t characters;
 	characters = getline(&b,&bufsize,stdin);
 	printf("message envoyé %s", buffer);
-	for(int i = 0; i < 2; i++)
+	
+	for(int i = 0; i < 20; i++)
 	{
 		send(sockfd, buffer, sizeof(buffer), 0);
 		sleep(1);
-	}
+	}	
 	return 0;
 }
