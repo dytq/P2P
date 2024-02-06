@@ -1,22 +1,34 @@
-run_server_central:
-	./p2p localhost 6666 
-run_client:
-	./p2p localhost 6666 192.168.0.25 6666
-	
-compile: main.o listener.o talker.o parser.o 
-	gcc -g -o p2p main.o listener.o talker.o parser.o 
+CC := gcc
+CFLAGS := -g
+TARGET := p2p
+SRCS := main.c listener.c talker.c parser.c
+OBJS := $(SRCS:.c=.o)
 
-main.o: 
-	gcc -c main.c listener.c talker.c
+.PHONY: all clean
 
-listener.o: 
-	gcc -c listener.c
+all: $(TARGET)
 
-talker.o:
-	gcc -c talker.c	
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-parser.o:
-	gcc -c parser.c
+main.o: main.c listener.h talker.h parser.h
+	$(CC) $(CFLAGS) -c $<
+
+listener.o: listener.c listener.h
+	$(CC) $(CFLAGS) -c $<
+
+talker.o: talker.c talker.h
+	$(CC) $(CFLAGS) -c $<
+
+parser.o: parser.c parser.h
+	$(CC) $(CFLAGS) -c $<
+
+run_server_central: $(TARGET)
+	./$(TARGET) localhost 6666
+
+run_client: $(TARGET)
+	./$(TARGET) localhost 6666 192.168.0.25 6666
 
 clean:
-	rm *.o p2p
+	rm -f $(OBJS) $(TARGET)
+
