@@ -1,0 +1,8 @@
+La compression audio vise à réduire la quantité de données pour stocker la musique.
+Deux formats de compression sont possibles : la compression sans pertes de données et la
+compression avec perte de données. C’est cette dernière qui nous intéresse puisqu’elle occupe un
+espace 10 fois moins grand que la première.
+Un certain nombre de normes de compression avec pertes de données est disponible
+aujourd’hui. Les plus communs sont MP3, VQF, OGG VORBIS. Mais il existe d’autres formats tels
+que ATRAC, MP3Pro, AAC, WMA….
+Les compressions sans pertes de données sont le Wave et l’AIFF.

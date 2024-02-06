@@ -1,0 +1,4 @@
+MP3.txt
+FAQ sur l’algorithme de compression utilisé dans le codage audio MPEG-2
+README.txt
+Fichier contenant les instructions d'utilisation
