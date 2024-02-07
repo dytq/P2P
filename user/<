@@ -23,9 +23,9 @@ int listen_client_ftp(client_ftp_t * client_ftp, int pipe)
 		do {
 			nbytes = read(pipe, &P, sizeof(packet_ftp_t));
 			if (nbytes > 0) {
-			    //printf("CLIENT FTP:\n");
-			    //printf("hostname %s\n", P.hostname);
-			    //printf("data %s\n", P.buf);
+			    printf("CLIENT FTP:\n");
+			    printf("hostname %s\n", P.hostname);
+			    printf("data %s\n", P.buf);
 
 			    if(strcmp(get_csv_value(P.buf,1),"R") == 0)
 			    {

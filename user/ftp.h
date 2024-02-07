@@ -27,6 +27,13 @@ typedef struct server_ftp_s {
 
 	// listen to pipe (clients)
 	int (*listen_server_ftp) (struct server_ftp_s*, int);
+	
+	int (*upload) (struct server_ftp_s *, char *, char *, char *);
+
+	int (*write_data) (struct server_ftp_s *, char *, char *);
+
+	int (*publish_data) (struct server_ftp_s *, char *, char *);
+
 } server_ftp_t;
 
 // Structure de données pour un client FTP
@@ -44,6 +51,9 @@ typedef struct client_ftp_s {
 	
 	// listen to pipe
 	int (*listen_client_ftp) (struct client_ftp_s *, int);
+
+	// Download data
+	int (*download) (struct client_ftp_s *, char *, char *, char *);
 } client_ftp_t;
 
 #endif

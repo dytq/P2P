@@ -1,5 +1,6 @@
 #include "server_ftp.h"
 #include "talker.h"
+#include "parser.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -78,17 +79,18 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 		do {
 			nbytes = read(pipe, &P, sizeof(packet_ftp_t));
 			if (nbytes > 0) {
-			    printf("SERVER_FTP :\n");
-			    printf("hostname %s\n", P.hostname);
-			    printf("data %s\n", P.buf);
-			    if(data[0] == 'D')
+			    //printf("SERVER_FTP :\n");
+			    //printf("hostname %s\n", P.hostname);
+			    //printf("data %s\n", P.buf);
+			    if(strcmp(get_csv_value(P.buf,1), "D") == 0)
 			    {
-				    server_ftp->upload(server_ftp, nom_fichier, P.hostname, "6666");
+				    server_ftp->upload(server_ftp, get_csv_value(P.buf,2), P.hostname, "6666");
 			    }
-			    if(data[0] == 'E')
+			    if(strcmp(get_csv_value(P.buf,1),"E") == 0)
 			    {
-				server_fpt->write_data(server_ftp, nom_fichier, description_fichier);
-				server_ftp->publish_data(server_ftp, nom_fichier, description_fichier);
+				server_ftp->write_data(server_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
+				server_ftp->publish_data(server_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
+				printf("Message recut E\n");
 			    }
 			}
 		} while (nbytes > 0);
@@ -98,20 +100,20 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 	return 0;
 }
 
-int upload(server_ftp, char * nom_fichier, char * hostname, char * port)
+int upload(server_ftp_t * server_ftp, char * nom_fichier, char * hostname, char * port)
 {
-	// fonction qui lit un fichier et l'envoie
-	// fonction qui envoie End + nom fichier
+	printf("Talk to send %s to %s",nom_fichier, hostname);	
+	printf("Talk to end %s to %s",nom_fichier, hostname);	
 	return 0;
 }
 
-int write_data(server_ftp server, char * nom_fichier, char * description_fichier)
+int write_data(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
 {
 	// append nom fichier et description fichier dans le fichier metadata
 	return 0;
 }	
 
-int publish_data(server_ftp server, char * nom_fichier, char * description_fichier)
+int publish_data(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
 {
 	// envoie au server central la nouvelle donnée
 	return 0;

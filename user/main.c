@@ -217,6 +217,7 @@ int main(int argc, char * argv[])
 
 	client_ftp->search_key = search_key;
 	client_ftp->listen_client_ftp = listen_client_ftp;
+	client_ftp->download = download;
 
 	client_ftp->hostname_main_server = argv[3];
 	client_ftp->port_main_server = argv[4];
