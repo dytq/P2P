@@ -49,7 +49,11 @@ int update_metadata(server_ftp_t * server_ftp, char * file)
 		strncat(buffer, title, title_len - 1);
 		strncat(buffer, ":", 2);
 		strncat(buffer, desc, desc_len + 1);
-		talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer);
+		if(talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer) == -1);
+		{
+			fprintf(stderr,"Impossible d'envoyer les metadata");
+			exit(EXIT_FAILURE);
+		}
 	}	
 	
 	if (title != NULL)
@@ -78,7 +82,8 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 
 		do {
 			nbytes = read(pipe, &P, sizeof(packet_ftp_t));
-			if (nbytes > 0) {
+			if (nbytes > 0) 
+			{
 			    //printf("SERVER_FTP :\n");
 			    //printf("hostname %s\n", P.hostname);
 			    //printf("data %s\n", P.buf);
@@ -92,6 +97,10 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 				server_ftp->publish_data(server_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
 				printf("Message recut E\n");
 			    }
+			    if(strcmp(get_csv_value(P.buf,1),"F") == 0)
+			    {
+				    printf("Fail to get key\n");
+			    }
 			}
 		} while (nbytes > 0);
 
@@ -100,21 +109,92 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 	return 0;
 }
 
+
 int upload(server_ftp_t * server_ftp, char * nom_fichier, char * hostname, char * port)
 {
-	printf("Talk to send %s to %s",nom_fichier, hostname);	
-	printf("Talk to end %s to %s",nom_fichier, hostname);	
+	// envoie fichier ligne par ligne
+	{
+		// Ouvrir le fichier en mode lecture
+		FILE *fichier = fopen(nom_fichier, "r");
+
+		if (fichier == NULL) {
+		perror("Erreur lors de l'ouverture du fichier");
+		exit(EXIT_FAILURE);
+		}
+
+		char ligne[1024];  // Ajustez la taille selon vos besoins
+		char buffer[2048]; // Un buffer pour stocker la ligne formatée
+
+		// Lire le fichier ligne par ligne
+		while (fgets(ligne, sizeof(ligne), fichier) != NULL) {
+			// Formater la ligne selon le format spécifié
+			snprintf(buffer, sizeof(buffer), "U,%s,%s", nom_fichier, ligne);
+
+			// Afficher le buffer
+			talker(hostname,port,buffer);	
+		}
+
+		// Fermer le fichier
+		fclose(fichier);
+	}
+
+	// envoie de la metadata une fois terminé
+	{
+		FILE *fichierMetadata = fopen(server_ftp->metadata, "r");
+
+		if (fichierMetadata == NULL) {
+			perror("Erreur lors de l'ouverture du fichier metadata.csv");
+			exit(EXIT_FAILURE);
+		}
+
+		char ligne[1024];  // Ajustez la taille selon vos besoins
+		char buffer[2048]; // Un buffer pour stocker la ligne formatée
+		
+		// Lire le fichier metadata.csv ligne par ligne
+		while (fgets(ligne, sizeof(ligne), fichierMetadata) != NULL) {
+			// Vérifier si la ligne contient la clé
+			if (strstr(ligne, nom_fichier) != NULL) {
+				// Formater la ligne selon le format spécifié
+				snprintf(buffer, sizeof(buffer), "E,%s,%s", get_csv_value(ligne,1), get_csv_value(ligne,2));
+				// Afficher le buffer
+				talker(hostname,port,buffer);	
+				// Fermer le fichier metadata.csv
+				fclose(fichierMetadata);
+			        return 0;
+			}
+		}
+
+		// Fermer le fichier metadata.csv
+		fclose(fichierMetadata);
+	}
 	return 0;
 }
 
 int write_metadata(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
 {
-	// append nom fichier et description fichier dans le fichier metadata
+	FILE *fichier = fopen(server_ftp->metadata, "a");
+
+	if (fichier == NULL) {
+	perror("Erreur lors de l'ouverture du fichier");
+	exit(EXIT_FAILURE);
+	}
+
+	// Formater la ligne selon le format spécifié
+	char ligne[1024];  // Ajustez la taille selon vos besoins
+	snprintf(ligne, sizeof(ligne), "%s,%s", nom_fichier, description_fichier);
+
+	// Écrire la ligne à la fin du fichier
+	fprintf(fichier, "%s\n", ligne);
+
+	// Fermer le fichier
+	fclose(fichier);
 	return 0;
 }	
 
 int publish_data(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
-{
-	// envoie au server central la nouvelle donnée
+{	
+	char buffer[1024];  // Ajustez la taille selon vos besoins
+	snprintf(buffer, sizeof(buffer), "%s,%s", nom_fichier, description_fichier);
+	talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer);
 	return 0;
 }

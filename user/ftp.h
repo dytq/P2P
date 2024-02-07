@@ -17,6 +17,8 @@ typedef struct server_ftp_s {
 	char * hostname_local;
 	char * port_local;
 
+	char * metadata;
+
 	// authentification vers le serveur centrale
 	// int (*auth)(struct server_ftp_s *, char * login, char * password, int pipefd);
 

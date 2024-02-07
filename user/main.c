@@ -204,6 +204,7 @@ int main(int argc, char * argv[])
 	server_ftp->hostname_main_server = argv[1];
 	server_ftp->port_main_server = argv[2];
 	
+	server_ftp->metadata = "metadata.csv";	
 	server_ftp->listen_server_ftp(server_ftp, p_server[0]);
 
 	printf("Update metadata...\n");

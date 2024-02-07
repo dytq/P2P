@@ -70,6 +70,18 @@ int download(client_ftp_t * client_ftp, char * nom_fichier, char * hote_distant,
 
 int write_data(client_ftp_t * client_ftp, char * nom_fichier, char * data)
 {
-	printf("Ecriture dans %s : %s", nom_fichier, data);
+	// Ouvrir le fichier en mode ajout (a+ crée le fichier s'il n'existe pas)
+	FILE *fichier = fopen(nom_fichier, "a+");
+
+	if (fichier == NULL) {
+		perror("Erreur lors de l'ouverture du fichier");
+		exit(EXIT_FAILURE);
+	}
+
+	// Écrire la ligne à la fin du fichier
+	fprintf(fichier, "%s\n", data);
+
+	// Fermer le fichier
+	fclose(fichier);	
 	return 0;
 }
