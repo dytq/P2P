@@ -49,11 +49,15 @@ int update_metadata(server_ftp_t * server_ftp, char * file)
 		strncat(buffer, title, title_len - 1);
 		strncat(buffer, ":", 2);
 		strncat(buffer, desc, desc_len + 1);
+		/*
 		if(talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer) == -1);
 		{
 			fprintf(stderr,"Impossible d'envoyer les metadata");
 			exit(EXIT_FAILURE);
 		}
+		*/
+		talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer);
+
 	}	
 	
 	if (title != NULL)

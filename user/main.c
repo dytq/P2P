@@ -201,14 +201,14 @@ int main(int argc, char * argv[])
 	server_ftp->write_metadata = write_metadata;
 	server_ftp->publish_data = publish_data;
 
-	server_ftp->hostname_main_server = argv[1];
-	server_ftp->port_main_server = argv[2];
+	server_ftp->hostname_main_server = argv[3];
+	server_ftp->port_main_server = argv[4];
 	
 	server_ftp->metadata = "metadata.csv";	
 	server_ftp->listen_server_ftp(server_ftp, p_server[0]);
 
 	printf("Update metadata...\n");
-       	server_ftp->update_metadata(server_ftp, "metadata.txt");
+       	server_ftp->update_metadata(server_ftp, server_ftp->metadata);
 		
 	// création du client_ftp
 	client_ftp_t * client_ftp;
