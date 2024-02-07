@@ -30,7 +30,7 @@ typedef struct server_ftp_s {
 	
 	int (*upload) (struct server_ftp_s *, char *, char *, char *);
 
-	int (*write_data) (struct server_ftp_s *, char *, char *);
+	int (*write_metadata) (struct server_ftp_s *, char *, char *);
 
 	int (*publish_data) (struct server_ftp_s *, char *, char *);
 
@@ -54,6 +54,9 @@ typedef struct client_ftp_s {
 
 	// Download data
 	int (*download) (struct client_ftp_s *, char *, char *, char *);
+
+	// write data downloaded
+	int (*write_data) (struct client_ftp_s *, char *, char *);
 } client_ftp_t;
 
 #endif

@@ -88,7 +88,7 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 			    }
 			    if(strcmp(get_csv_value(P.buf,1),"E") == 0)
 			    {
-				server_ftp->write_data(server_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
+				server_ftp->write_metadata(server_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
 				server_ftp->publish_data(server_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
 				printf("Message recut E\n");
 			    }
@@ -107,7 +107,7 @@ int upload(server_ftp_t * server_ftp, char * nom_fichier, char * hostname, char 
 	return 0;
 }
 
-int write_data(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
+int write_metadata(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
 {
 	// append nom fichier et description fichier dans le fichier metadata
 	return 0;

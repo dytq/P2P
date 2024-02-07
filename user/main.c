@@ -197,6 +197,9 @@ int main(int argc, char * argv[])
 	
 	server_ftp->update_metadata = update_metadata;	
 	server_ftp->listen_server_ftp = listen_server_ftp;
+	server_ftp->upload = upload;
+	server_ftp->write_metadata = write_metadata;
+	server_ftp->publish_data = publish_data;
 
 	server_ftp->hostname_main_server = argv[1];
 	server_ftp->port_main_server = argv[2];
@@ -218,7 +221,8 @@ int main(int argc, char * argv[])
 	client_ftp->search_key = search_key;
 	client_ftp->listen_client_ftp = listen_client_ftp;
 	client_ftp->download = download;
-
+	client_ftp->write_data = write_data;	
+	
 	client_ftp->hostname_main_server = argv[3];
 	client_ftp->port_main_server = argv[4];
 

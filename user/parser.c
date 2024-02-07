@@ -10,6 +10,13 @@ char* get_csv_value(const char* csv_line, int line_number) {
     while (token != NULL) {
         if (current_line == line_number) {
             // Nous avons trouvé la valeur à la ligne spécifiée
+
+            // Vérifier si le dernier caractère est un '\n' et le remplacer par '\0'
+            size_t length = strlen(token);
+            if (length > 0 && token[length - 1] == '\n') {
+                token[length - 1] = '\0';
+            }
+
             char* result = strdup(token);
             free(line_copy); // Libérer la mémoire allouée pour la copie de ligne
             return result;
@@ -22,3 +29,4 @@ char* get_csv_value(const char* csv_line, int line_number) {
     free(line_copy); // Libérer la mémoire allouée pour la copie de ligne
     return NULL; // La ligne spécifiée n'a pas été trouvée
 }
+

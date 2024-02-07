@@ -33,7 +33,7 @@ int listen_client_ftp(client_ftp_t * client_ftp, int pipe)
 			    } 
 			    if(strcmp(get_csv_value(P.buf,1),"U") == 0)
 			    {
-				//client_ftp->write_data(client_ftp, nom_fichier, data);
+				client_ftp->write_data(client_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3));
 				printf("Message recut U\n");
 			    }
 			}
@@ -65,5 +65,11 @@ int download(client_ftp_t * client_ftp, char * nom_fichier, char * hote_distant,
 	strncat(buffer,"D,",3);
 	strncat(buffer, nom_fichier, sizeof(nom_fichier));
 	talker(hote_distant, port, buffer);
+	return 0;
+}
+
+int write_data(client_ftp_t * client_ftp, char * nom_fichier, char * data)
+{
+	printf("Ecriture dans %s : %s", nom_fichier, data);
 	return 0;
 }
