@@ -198,7 +198,7 @@ int write_metadata(server_ftp_t * server_ftp, char * nom_fichier, char * descrip
 int publish_data(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
 {	
 	char buffer[1024];  // Ajustez la taille selon vos besoins
-	snprintf(buffer, sizeof(buffer), "%s,%s", nom_fichier, description_fichier);
+	snprintf(buffer, sizeof(buffer), "%s", nom_fichier);
 	talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer);
 	return 0;
 }

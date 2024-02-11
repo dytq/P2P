@@ -47,55 +47,9 @@ void saisirLoginPassword(char *login, char *password, char * buffer)
 	fgets(password, MAX_BUFFER_SIZE, stdin);
 	password[strcspn(password, "\n")] = '\0';  // Supprime le caractère de nouvelle ligne
 	
+
 	// Concaténer login et password dans buffer
-    	snprintf(buffer, MAX_BUFFER_SIZE * 2, "%s,%s", login, password);
-}
-
-void attend_reponse(char * adresseIP, char * port)
-{
-    int sockfd = -1;
-    sockfd = listener(adresseIP, port, 0);
-    listen(sockfd, 10);
-    struct sockaddr_in serveurAddr, clientAddr;
-    socklen_t clientAddrLen = sizeof(clientAddr);
-
-
-    // Attente de la connexion d'un client
-    int clientSocket = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrLen);
-    if (clientSocket == -1) {
-        perror("Erreur lors de l'acceptation de la connexion du client");
-        close(sockfd);
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Connexion acceptée depuis %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
-
-    // Lecture du message du client
-    char buffer[MAX_BUFFER_SIZE];
-    ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-    if (bytesRead == -1) {
-        perror("Erreur lors de la lecture du message du client");
-    } else if (bytesRead == 0) {
-        printf("La connexion du client est fermée.\n");
-    } else {
-        // Affichage du message reçu
-        buffer[bytesRead] = '\0';
-        printf("Message du client : %s\n", buffer);
-
-	if (buffer[0] == 'A') {
-            printf("Connexion accepté...\n");
-         } 
-	 else{
-            printf("Connexion non accepté.\n");
-            close(clientSocket);
-            close(sockfd);
-            exit(EXIT_SUCCESS);
-	 }
-    }
-
-    // Fermeture des sockets
-    close(clientSocket);
-    close(sockfd);	
+    	snprintf(buffer, MAX_BUFFER_SIZE * 2 +1, "A,%s,%s", login, password);
 }
 
 int main(int argc, char * argv[])
@@ -106,22 +60,7 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE);
 	}
 	
-	printf("Authentification\n");
-	char login[MAX_BUFFER_SIZE];
-	char password[MAX_BUFFER_SIZE];
-	char buffer[MAX_BUFFER_SIZE * 2];
-
-	saisirLoginPassword(login, password,buffer);
-
-	// Vous pouvez maintenant utiliser les valeurs de login et password comme nécessaire.
-
-	printf("Login saisi : %s\n", login);
-	printf("Mot de passe saisi : %s\n", password);
-
-	talker(argv[3],argv[4],buffer);
 	
-	attend_reponse(argv[1],argv[2]);	
-
 	printf("Liaison du port hostname de reception %s:%s\n", argv[1],argv[2]);	
 	printf("Démmarage du serveur centrale...\n");
 	
@@ -129,6 +68,9 @@ int main(int argc, char * argv[])
 	pipe(p_server);
 	int p_client[2];
 	pipe(p_client);
+	
+	int p_auth[2];
+	pipe(p_auth);
 
 	int sockfd = -1; // sockfd du listener
 	sockfd = listener(argv[1], argv[2], 0);
@@ -166,6 +108,7 @@ int main(int argc, char * argv[])
 
 					strncpy(P.hostname, client_ip, INET_ADDRSTRLEN * sizeof(char)); // Copie du hostname
 					printf("client ip  %s\n", client_ip);
+					write(p_auth[1], &P, sizeof(packet_ftp_t));	
 					write(p_server[1], &P, sizeof(packet_ftp_t));
 					write(p_client[1], &P, sizeof(packet_ftp_t));
 				}
@@ -178,9 +121,43 @@ int main(int argc, char * argv[])
 		}
 		exit(1);
 	}
+	
+	printf("Authentification\n");
+	char login[MAX_BUFFER_SIZE];
+	char password[MAX_BUFFER_SIZE];
+	char buffer[MAX_BUFFER_SIZE * 2];
+
+	saisirLoginPassword(login, password, buffer);
+
+	printf("Login saisi : %s\n", login);
+	printf("Mot de passe saisi : %s\n", password);
+
+	printf("Authentification en cours...\n");
+	
+	talker(argv[3],argv[4],buffer); // envoie des données vers le serveur
+	int nbytes = 0;
+	do {
+		nbytes = read(p_auth[0], &P, sizeof(packet_ftp_t));
+		if (nbytes > 0) 
+		{
+			printf("SERVER_CENTRAL :\n");
+			printf("hostname %s\n", P.hostname);
+			printf("data %s\n", P.buf);
+			if(P.buf[0] == 'A')
+			{
+				printf("Connexion accepté\n");
+				break;
+			} 
+			else
+			{
+				printf("Connexion non accepté\n");
+				exit(EXIT_SUCCESS);
+			}
+		}
+	} while (nbytes > 0);
 
 	printf("Initialisation du serveur_ftp...\n");
-	
+		
 	// Initialisation du serveur_ftp
 	server_ftp_t * server_ftp;	
 	server_ftp = malloc(sizeof(server_ftp_t));
