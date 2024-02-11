@@ -52,7 +52,7 @@ int search_key(client_ftp_t * client_ftp, char * key)
 	memset(buffer, '\0', 1024);
 	strncat(buffer,"L,",3);
 	strncat(buffer, key, 33);
-	talker(client_ftp->hostname_main_server, client_ftp->port_main_server, buffer);
+	talker(client_ftp->sockfd, buffer);
 	return 0;
 }
 
@@ -64,7 +64,7 @@ int download(client_ftp_t * client_ftp, char * nom_fichier, char * hote_distant,
 	memset(buffer, '\0', 1024);
 	strncat(buffer,"D,",3);
 	strncat(buffer, nom_fichier, sizeof(nom_fichier));
-	talker(hote_distant, port, buffer);
+	talker(client_ftp->sockfd, buffer);
 	return 0;
 }
 

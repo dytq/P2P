@@ -1,30 +1,27 @@
-run_server_central:
-	./p2p 192.168.0.25 6666 localhost 6666
+CC = gcc
+CFLAGS = -g
 
-run_client:
-	./p2p localhost 6666 192.168.0.25 6666
-	
-compile: main.o listener.o talker.o parser.o server_ftp.o client_ftp.o
-	gcc -g -o p2p main.o listener.o talker.o parser.o server_ftp.o client_ftp.o
+SRC_DIR = src
+OBJ_DIR = obj
+BIN_DIR = bin
 
-main.o: 
-	gcc -c main.c
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+TARGET = $(BIN_DIR)/p2p
 
-listener.o: 
-	gcc -c listener.c
+.PHONY: all clean
 
-talker.o:
-	gcc -c talker.c	
+all: $(TARGET)
 
-parser.o:
-	gcc -c parser.c
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-server_ftp.o:
-	gcc -c server_ftp.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-client_ftp.o:
-	gcc -c client_ftp.c
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
 clean:
-	rm *.o p2p
+	rm -rf $(OBJ_DIR) $(TARGET)
 

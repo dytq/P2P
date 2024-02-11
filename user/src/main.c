@@ -108,7 +108,7 @@ int main(int argc, char * argv[])
 
 					strncpy(P.hostname, client_ip, INET_ADDRSTRLEN * sizeof(char)); // Copie du hostname
 					printf("client ip  %s\n", client_ip);
-					write(p_auth[1], &P, sizeof(packet_ftp_t));	
+					write(p_auth[1], &P, sizeof(packet_ftp_t));
 					write(p_server[1], &P, sizeof(packet_ftp_t));
 					write(p_client[1], &P, sizeof(packet_ftp_t));
 				}
@@ -131,30 +131,6 @@ int main(int argc, char * argv[])
 
 	printf("Login saisi : %s\n", login);
 	printf("Mot de passe saisi : %s\n", password);
-
-	printf("Authentification en cours...\n");
-	
-	talker(argv[3],argv[4],buffer); // envoie des données vers le serveur
-	int nbytes = 0;
-	do {
-		nbytes = read(p_auth[0], &P, sizeof(packet_ftp_t));
-		if (nbytes > 0) 
-		{
-			printf("SERVER_CENTRAL :\n");
-			printf("hostname %s\n", P.hostname);
-			printf("data %s\n", P.buf);
-			if(P.buf[0] == 'A')
-			{
-				printf("Connexion accepté\n");
-				break;
-			} 
-			else
-			{
-				printf("Connexion non accepté\n");
-				exit(EXIT_SUCCESS);
-			}
-		}
-	} while (nbytes > 0);
 
 	printf("Initialisation du serveur_ftp...\n");
 		
@@ -179,6 +155,31 @@ int main(int argc, char * argv[])
 	server_ftp->metadata = "metadata.csv";	
 	server_ftp->listen_server_ftp(server_ftp, p_server[0]);
 
+	printf("Authentification en cours");
+	server_ftp->sockfd = init_talker(argv[3],argv[4]); // envoie des données vers le serveur
+	talker(server_ftp->sockfd, buffer);
+	int nbytes = 0;
+	do {
+		printf("Attente de réponse");
+		nbytes = read(p_auth[0], &P, sizeof(packet_ftp_t));
+		if (nbytes > 0) 
+		{
+			printf("SERVER_CENTRAL :\n");
+			printf("hostname %s\n", P.hostname);
+			printf("data %s\n", P.buf);
+			if(P.buf[0] == 'A')
+			{
+				printf("Connexion accepté\n");
+				break;
+			} 
+			else
+			{
+				printf("Connexion non accepté\n");
+				exit(EXIT_SUCCESS);
+			}
+		}
+	} while (nbytes > 0);
+	
 	printf("Update metadata...\n");
        	server_ftp->update_metadata(server_ftp, server_ftp->metadata);
 		

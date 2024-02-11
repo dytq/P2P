@@ -19,6 +19,7 @@ typedef struct server_ftp_s {
 
 	char * metadata;
 
+	int sockfd;
 	// authentification vers le serveur centrale
 	// int (*auth)(struct server_ftp_s *, char * login, char * password, int pipefd);
 
@@ -47,7 +48,8 @@ typedef struct client_ftp_s {
 	char * port_local;
 
 	int * sockfd_listen; 
-
+	
+	int sockfd;
 	// recherche données dans le serveur centrale
 	int (*search_key) (struct client_ftp_s *, char *);
 	

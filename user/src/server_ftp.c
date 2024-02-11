@@ -56,7 +56,7 @@ int update_metadata(server_ftp_t * server_ftp, char * file)
 			exit(EXIT_FAILURE);
 		}
 		*/
-		talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer);
+		talker(server_ftp->sockfd, buffer);
 
 	}	
 	
@@ -135,7 +135,7 @@ int upload(server_ftp_t * server_ftp, char * nom_fichier, char * hostname, char 
 			snprintf(buffer, sizeof(buffer), "U,%s,%s", nom_fichier, ligne);
 
 			// Afficher le buffer
-			talker(hostname,port,buffer);	
+			talker(server_ftp->sockfd,buffer);	
 		}
 
 		// Fermer le fichier
@@ -161,7 +161,7 @@ int upload(server_ftp_t * server_ftp, char * nom_fichier, char * hostname, char 
 				// Formater la ligne selon le format spécifié
 				snprintf(buffer, sizeof(buffer), "E,%s,%s", get_csv_value(ligne,1), get_csv_value(ligne,2));
 				// Afficher le buffer
-				talker(hostname,port,buffer);	
+				talker(server_ftp->sockfd,buffer);	
 				// Fermer le fichier metadata.csv
 				fclose(fichierMetadata);
 			        return 0;
@@ -199,6 +199,6 @@ int publish_data(server_ftp_t * server_ftp, char * nom_fichier, char * descripti
 {	
 	char buffer[1024];  // Ajustez la taille selon vos besoins
 	snprintf(buffer, sizeof(buffer), "%s", nom_fichier);
-	talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer);
+	talker(server_ftp->sockfd, buffer);
 	return 0;
 }

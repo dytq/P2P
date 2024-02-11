@@ -9,11 +9,13 @@
 #include <unistd.h>
 #include "talker.h"
 
-int talker(char * addr, char * port, char * text)
+int init_talker(char * addr, char * port)
 {
 	struct addrinfo hints;
 	struct addrinfo * results;
 
+	int sockfd = -1;
+	
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -26,7 +28,6 @@ int talker(char * addr, char * port, char * text)
 	}
 	
 	struct addrinfo * r;
-	int sockfd = -1;
 	for(r = results; r != NULL; r->ai_next)
 	{ 
 		sockfd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
@@ -49,11 +50,16 @@ int talker(char * addr, char * port, char * text)
 	}
 	
 	freeaddrinfo(results);
-	//for(int i = 0; i < 10; i++)
-	//{
+	return sockfd;
+}
+
+
+int talker(int sockfd, char * text)
+{
 	send(sockfd, text ,strlen(text) + 1, 0);
+}
+
+void close_talker(int sockfd)
+{
 	close(sockfd);
-	//	sleep(1);
-	//}
-	return 0;
 }
