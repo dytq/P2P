@@ -27,38 +27,17 @@ int update_metadata(server_ftp_t * server_ftp, char * file)
 	size_t len = 0;
 	ssize_t title_len;
 	ssize_t desc_len;
-
 	while (1) {
 		title_len = getline(&title, &len, F_IN);
 		if(title_len == -1)
 		{
 			break; // fin de lecture
 		}
-		printf("%s",title);
-		desc_len = getline(&desc, &len, F_IN);
-		if(desc_len == -1)
-		{
-			fprintf(stderr, "Metadata corrompu");
-			break;
-		}
-		printf("%s",desc);
 		// envoie du message
 		char buffer[1024];
-		memset(buffer,'\0', 1024*sizeof(char));
-		strncat(buffer, "P, ", 4);
-		strncat(buffer, title, title_len - 1);
-		strncat(buffer, ":", 2);
-		strncat(buffer, desc, desc_len + 1);
-		/*
-		if(talker(server_ftp->hostname_main_server, server_ftp->port_main_server, buffer) == -1);
-		{
-			fprintf(stderr,"Impossible d'envoyer les metadata");
-			exit(EXIT_FAILURE);
-		}
-		*/
+		snprintf(buffer, sizeof(char)*1024, "P,%s,%s",get_csv_value(title,1),get_csv_value(title,2));
 		talker(server_ftp->sockfd, buffer);
-
-	}	
+	}
 	
 	if (title != NULL)
 	{
@@ -116,61 +95,63 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 
 int upload(server_ftp_t * server_ftp, char * nom_fichier, char * hostname, char * port)
 {
-	// envoie fichier ligne par ligne
-	{
-		// Ouvrir le fichier en mode lecture
-		FILE *fichier = fopen(nom_fichier, "r");
+		// envoie fichier ligne par ligne
+	char emplacement_fichier[1024];
+	snprintf(emplacement_fichier, sizeof(char)*1024, "share/%s",nom_fichier);	
+	// Ouvrir le fichier en mode lecture
+	FILE *fichier = fopen(emplacement_fichier, "r");
 
-		if (fichier == NULL) {
-		perror("Erreur lors de l'ouverture du fichier");
-		exit(EXIT_FAILURE);
-		}
-
-		char ligne[1024];  // Ajustez la taille selon vos besoins
-		char buffer[2048]; // Un buffer pour stocker la ligne formatée
-
-		// Lire le fichier ligne par ligne
-		while (fgets(ligne, sizeof(ligne), fichier) != NULL) {
-			// Formater la ligne selon le format spécifié
-			snprintf(buffer, sizeof(buffer), "U,%s,%s", nom_fichier, ligne);
-
-			// Afficher le buffer
-			talker(server_ftp->sockfd,buffer);	
-		}
-
-		// Fermer le fichier
-		fclose(fichier);
+	if (fichier == NULL) {
+		fprintf(stderr, "erreur emplacement fichier non trouvé %s\n", emplacement_fichier);
+		return -1;
 	}
+
+	char ligne_fichier[1024];  // Ajustez la taille selon vos besoins
+	char buffer_fichier[2048]; // Un buffer pour stocker la ligne formatée
+
+	// Lire le fichier ligne par ligne
+	while (fgets(ligne_fichier, sizeof(ligne_fichier), fichier) != NULL) {
+		// Formater la ligne selon le format spécifié
+		snprintf(buffer_fichier, sizeof(buffer_fichier), "U,%s,%s\n", nom_fichier, ligne_fichier);
+
+		// Afficher le buffer
+		int sockfd_client = init_talker(hostname, "6666");
+		talker(sockfd_client,buffer_fichier);	
+		close_talker(sockfd_client);
+	}
+
+	// Fermer le fichier
+	fclose(fichier);
 
 	// envoie de la metadata une fois terminé
-	{
-		FILE *fichierMetadata = fopen(server_ftp->metadata, "r");
+	FILE *fichierMetadata = fopen(server_ftp->metadata, "r");
 
-		if (fichierMetadata == NULL) {
-			perror("Erreur lors de l'ouverture du fichier metadata.csv");
-			exit(EXIT_FAILURE);
-		}
-
-		char ligne[1024];  // Ajustez la taille selon vos besoins
-		char buffer[2048]; // Un buffer pour stocker la ligne formatée
-		
-		// Lire le fichier metadata.csv ligne par ligne
-		while (fgets(ligne, sizeof(ligne), fichierMetadata) != NULL) {
-			// Vérifier si la ligne contient la clé
-			if (strstr(ligne, nom_fichier) != NULL) {
-				// Formater la ligne selon le format spécifié
-				snprintf(buffer, sizeof(buffer), "E,%s,%s", get_csv_value(ligne,1), get_csv_value(ligne,2));
-				// Afficher le buffer
-				talker(server_ftp->sockfd,buffer);	
-				// Fermer le fichier metadata.csv
-				fclose(fichierMetadata);
-			        return 0;
-			}
-		}
-
-		// Fermer le fichier metadata.csv
-		fclose(fichierMetadata);
+	if (fichierMetadata == NULL) {
+		perror("Erreur lors de l'ouverture du fichier metadata.csv");
+		exit(EXIT_FAILURE);
 	}
+
+	char ligne[1024];  // Ajustez la taille selon vos besoins
+	char buffer[1024]; // Un buffer pour stocker la ligne formatée
+	
+	// Lire le fichier metadata.csv ligne par ligne
+	while (fgets(ligne, sizeof(ligne), fichierMetadata) != NULL) {
+		// Vérifier si la ligne contient la clé
+		if (strstr(ligne, nom_fichier) != NULL) {
+			// Formater la ligne selon le format spécifié
+			snprintf(buffer, sizeof(buffer), "E,%s,%s", get_csv_value(ligne,1), get_csv_value(ligne,2));
+			// Afficher le buffer
+			int sockfd_client = init_talker(hostname, "6666");
+			talker(sockfd_client, buffer);
+			close_talker(sockfd_client);
+			// Fermer le fichier metadata.csv
+			fclose(fichierMetadata);
+			return 0;
+		}
+	}
+
+	// Fermer le fichier metadata.csv
+	fclose(fichierMetadata);
 	return 0;
 }
 
@@ -197,8 +178,11 @@ int write_metadata(server_ftp_t * server_ftp, char * nom_fichier, char * descrip
 
 int publish_data(server_ftp_t * server_ftp, char * nom_fichier, char * description_fichier)
 {	
+	printf("publish data");
 	char buffer[1024];  // Ajustez la taille selon vos besoins
-	snprintf(buffer, sizeof(buffer), "%s", nom_fichier);
-	talker(server_ftp->sockfd, buffer);
+	snprintf(buffer, sizeof(buffer), "P,%s,%s", nom_fichier,description_fichier);
+	int sockfd = init_talker(server_ftp->hostname_main_server,server_ftp->port_main_server);
+	talker(sockfd, buffer);
+	close_talker(sockfd);
 	return 0;
 }
