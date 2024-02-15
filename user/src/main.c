@@ -197,6 +197,8 @@ int main(int argc, char * argv[])
 	client_ftp->download = download;
 	client_ftp->write_data = write_data;	
 	
+	client_ftp->sockfd = server_ftp->sockfd;
+		
 	client_ftp->hostname_main_server = argv[3];
 	client_ftp->port_main_server = argv[4];
 
