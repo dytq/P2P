@@ -29,7 +29,7 @@ int listen_client_ftp(client_ftp_t * client_ftp, int pipe)
 
 			    if(strcmp(get_csv_value(P.buf,1),"R") == 0)
 			    {
-				   client_ftp->download(client_ftp, get_csv_value(P.buf,2), get_csv_value(P.buf,3), "6666");
+				   client_ftp->download(client_ftp, get_csv_value(P.buf,3), get_csv_value(P.buf,2), "6666");
 			    } 
 			    if(strcmp(get_csv_value(P.buf,1),"U") == 0)
 			    {
@@ -61,10 +61,10 @@ int download(client_ftp_t * client_ftp, char * nom_fichier, char * hote_distant,
 	// envoie de la requete au serveur
 	printf("Download data %s", nom_fichier);
 	char buffer[1024];
-	memset(buffer, '\0', 1024);
-	strncat(buffer,"D,",3);
-	strncat(buffer, nom_fichier, sizeof(nom_fichier));
-	talker(client_ftp->sockfd, buffer);
+	snprintf(buffer, sizeof(buffer), "D,%s",nom_fichier);
+	int sockfd = init_talker(hote_distant, port);
+	talker(sockfd, buffer);
+	close_talker(sockfd);
 	return 0;
 }
 
