@@ -72,7 +72,7 @@ int listen_server_ftp(server_ftp_t * server_ftp, int pipe)
 			    //printf("data %s\n", P.buf);
 			    if(strcmp(get_csv_value(P.buf,1), "D") == 0)
 			    {
-				    server_ftp->upload(server_ftp, get_csv_value(P.buf,2), P.hostname, "6666");
+				    server_ftp->upload(server_ftp, get_csv_value(P.buf,3), get_csv_value(P.buf,2), "6666");
 			    }
 			    if(strcmp(get_csv_value(P.buf,1),"E") == 0)
 			    {
